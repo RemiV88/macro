@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
+import { getToken } from './auth';
 
 // --- API base URL ---
 //
@@ -45,5 +46,39 @@ const api = axios.create({
   baseURL,
   timeout: 8000,
 });
+
+api.interceptors.request.use(async (config) => {
+  const url = `${config.baseURL || ''}${config.url || ''}`;
+  console.log('[api] →', config.method?.toUpperCase(), url);
+  console.log('[api]   before getToken');
+  const token = await getToken();
+  console.log('[api]   after  getToken, hasToken =', !!token);
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (res) => {
+    console.log('[api] ←', res.status, res.config.url);
+    return res;
+  },
+  (err) => {
+    console.log(
+      '[api] ✕',
+      err.config?.method?.toUpperCase(),
+      err.config?.url,
+      '— code:',
+      err.code,
+      'message:',
+      err.message,
+      'status:',
+      err.response?.status
+    );
+    return Promise.reject(err);
+  }
+);
 
 export default api;
