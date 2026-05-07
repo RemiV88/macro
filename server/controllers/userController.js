@@ -105,4 +105,42 @@ async function updateOnboarding(req, res) {
   res.json({ user });
 }
 
-module.exports = { updateOnboarding };
+// Profile edit — name + avatar only. Stats live behind the onboarding flow
+// (PATCH /users/me/onboarding) and we don't want a separate path in here that
+// would let a client mutate a single stat in isolation, since that would skip
+// target recalculation. So we strictly allow-list the two fields and reject
+// the request if any other key shows up in the body.
+const ALLOWED_PROFILE_FIELDS = new Set(['name', 'profileImageUrl']);
+
+async function updateMe(req, res) {
+  const body = req.body || {};
+
+  for (const key of Object.keys(body)) {
+    if (!ALLOWED_PROFILE_FIELDS.has(key)) {
+      return res.status(400).json({
+        error: `Field "${key}" cannot be updated here. Only name and profileImageUrl are editable.`,
+      });
+    }
+  }
+
+  if (body.name !== undefined) {
+    if (typeof body.name !== 'string' || !body.name.trim()) {
+      return res.status(400).json({ error: 'name must be a non-empty string' });
+    }
+  }
+
+  if (body.profileImageUrl !== undefined) {
+    if (body.profileImageUrl !== null && typeof body.profileImageUrl !== 'string') {
+      return res.status(400).json({ error: 'profileImageUrl must be a string or null' });
+    }
+  }
+
+  const user = req.user;
+  if (body.name !== undefined) user.name = body.name.trim();
+  if (body.profileImageUrl !== undefined) user.profileImageUrl = body.profileImageUrl;
+
+  await user.save();
+  res.json({ user });
+}
+
+module.exports = { updateOnboarding, updateMe };

@@ -47,8 +47,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signup = useCallback(
-    async (email, password) => {
-      const { data } = await api.post('/auth/signup', { email, password });
+    async (name, email, password, profileImageUrl) => {
+      const { data } = await api.post('/auth/signup', {
+        name,
+        email,
+        password,
+        profileImageUrl: profileImageUrl || null,
+      });
       await persist(data.token, data.user);
       return data.user;
     },

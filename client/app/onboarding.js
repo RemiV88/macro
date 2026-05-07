@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
+import { colors, spacing, radius, typography } from '../theme';
 
 const GENDERS = [
   { value: 'male', label: 'Male' },
@@ -112,7 +113,11 @@ export default function Onboarding() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.title}>Tell us about you</Text>
       <Text style={styles.subtitle}>We'll use this to set your daily targets.</Text>
 
@@ -120,6 +125,7 @@ export default function Onboarding() {
         <Text style={styles.label}>Age</Text>
         <TextInput
           style={styles.input}
+          placeholderTextColor={colors.textDim}
           keyboardType="number-pad"
           value={age}
           onChangeText={setAge}
@@ -136,6 +142,7 @@ export default function Onboarding() {
         <Text style={styles.label}>Height (cm)</Text>
         <TextInput
           style={styles.input}
+          placeholderTextColor={colors.textDim}
           keyboardType="number-pad"
           value={heightCm}
           onChangeText={setHeightCm}
@@ -147,6 +154,7 @@ export default function Onboarding() {
         <Text style={styles.label}>Weight (kg)</Text>
         <TextInput
           style={styles.input}
+          placeholderTextColor={colors.textDim}
           keyboardType="decimal-pad"
           value={weightKg}
           onChangeText={setWeightKg}
@@ -161,6 +169,8 @@ export default function Onboarding() {
             value={hasFitnessTracker}
             onValueChange={setHasFitnessTracker}
             disabled={submitting}
+            trackColor={{ false: colors.surfaceAlt, true: colors.accent }}
+            thumbColor={colors.text}
           />
         </View>
       </View>
@@ -170,6 +180,7 @@ export default function Onboarding() {
           <Text style={styles.label}>Average daily burn (kcal)</Text>
           <TextInput
             style={styles.input}
+            placeholderTextColor={colors.textDim}
             keyboardType="number-pad"
             value={dailyBurnKcal}
             onChangeText={setDailyBurnKcal}
@@ -201,7 +212,7 @@ export default function Onboarding() {
         disabled={submitting}
       >
         {submitting ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={colors.bg} />
         ) : (
           <Text style={styles.buttonText}>Save & continue</Text>
         )}
@@ -211,40 +222,81 @@ export default function Onboarding() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 24, gap: 16, backgroundColor: '#fff' },
-  title: { fontSize: 26, fontWeight: '700' },
-  subtitle: { fontSize: 14, color: '#666', marginBottom: 8 },
-  field: { gap: 6 },
-  label: { fontSize: 14, color: '#333', fontWeight: '500' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d4d4d8',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
+  scroll: { flex: 1, backgroundColor: colors.bg },
+  container: {
+    padding: spacing.xl,
+    gap: spacing.lg,
+    backgroundColor: colors.bg,
   },
-  choiceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  choice: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#d4d4d8',
-    backgroundColor: '#fff',
+  title: {
+    fontSize: typography.sizes.h1,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.text,
   },
-  choiceSelected: { backgroundColor: '#111', borderColor: '#111' },
-  choiceText: { color: '#111', fontSize: 14 },
-  choiceTextSelected: { color: '#fff' },
-  button: {
-    backgroundColor: '#111',
-    paddingVertical: 14,
-    borderRadius: 10,
+  subtitle: {
+    fontSize: typography.sizes.body,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
+  field: { gap: spacing.sm },
+  label: {
+    fontSize: typography.sizes.body,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.textMuted,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+  },
+  input: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    fontSize: typography.sizes.bodyLg,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.text,
+  },
+  choiceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  choice: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  choiceSelected: {
+    backgroundColor: colors.accentMuted,
+    borderColor: colors.accent,
+  },
+  choiceText: {
+    color: colors.text,
+    fontSize: typography.sizes.body,
+    fontFamily: typography.fontFamily.medium,
+  },
+  choiceTextSelected: { color: colors.accent },
+  button: {
+    backgroundColor: colors.accent,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    marginTop: spacing.sm,
   },
   buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  error: { color: 'crimson', fontSize: 14 },
+  buttonText: {
+    color: colors.bg,
+    fontSize: typography.sizes.bodyLg,
+    fontFamily: typography.fontFamily.semibold,
+  },
+  error: {
+    color: colors.danger,
+    fontSize: typography.sizes.body,
+    fontFamily: typography.fontFamily.medium,
+  },
 });

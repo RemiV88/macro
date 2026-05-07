@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Link } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
+import { colors, spacing, radius, typography } from '../theme';
 
 export default function Login() {
   const { login } = useAuth();
@@ -47,6 +48,7 @@ export default function Login() {
         <TextInput
           style={styles.input}
           placeholder="Email"
+          placeholderTextColor={colors.textDim}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="email-address"
@@ -57,6 +59,7 @@ export default function Login() {
         <TextInput
           style={styles.input}
           placeholder="Password"
+          placeholderTextColor={colors.textDim}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -71,7 +74,7 @@ export default function Login() {
           disabled={submitting}
         >
           {submitting ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.bg} />
           ) : (
             <Text style={styles.buttonText}>Log in</Text>
           )}
@@ -86,26 +89,54 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#fff' },
-  form: { gap: 12 },
-  title: { fontSize: 28, fontWeight: '700', marginBottom: 8 },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: spacing.xl,
+    backgroundColor: colors.bg,
+  },
+  form: { gap: spacing.md },
+  title: {
+    fontSize: typography.sizes.h1,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
   input: {
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#d4d4d8',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    fontSize: typography.sizes.bodyLg,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.text,
   },
   button: {
-    backgroundColor: '#111',
-    paddingVertical: 14,
-    borderRadius: 10,
+    backgroundColor: colors.accent,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  link: { color: '#2563eb', fontSize: 15, textAlign: 'center', marginTop: 16 },
-  error: { color: 'crimson', fontSize: 14 },
+  buttonText: {
+    color: colors.bg,
+    fontSize: typography.sizes.bodyLg,
+    fontFamily: typography.fontFamily.semibold,
+  },
+  link: {
+    color: colors.accent,
+    fontSize: typography.sizes.body,
+    fontFamily: typography.fontFamily.medium,
+    textAlign: 'center',
+    marginTop: spacing.lg,
+  },
+  error: {
+    color: colors.danger,
+    fontSize: typography.sizes.body,
+    fontFamily: typography.fontFamily.medium,
+  },
 });

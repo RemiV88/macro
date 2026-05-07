@@ -8,7 +8,11 @@ function signToken(user) {
 }
 
 async function signup(req, res) {
-  const { email, password } = req.body || {};
+  const { name, email, password, profileImageUrl } = req.body || {};
+  const trimmedName = typeof name === 'string' ? name.trim() : '';
+  if (!trimmedName) {
+    return res.status(400).json({ error: 'Name is required' });
+  }
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
@@ -21,7 +25,12 @@ async function signup(req, res) {
     return res.status(409).json({ error: 'Email already in use' });
   }
 
-  const user = await User.create({ email, password });
+  const user = await User.create({
+    name: trimmedName,
+    email,
+    password,
+    profileImageUrl: profileImageUrl || null,
+  });
   const token = signToken(user);
   res.status(201).json({ token, user });
 }
