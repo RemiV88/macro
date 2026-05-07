@@ -13,7 +13,7 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 import { colors, typography } from '../theme';
 
 const PUBLIC_ROUTES = new Set(['login', 'signup']);
-const AUTHED_STACKS = new Set(['foods', 'meals', 'logged-meals', 'profile']);
+const AUTHED_STACKS = new Set(['foods', 'meals', 'logged-meals', 'profile', 'weight']);
 
 function AuthGate() {
   const { user, loading } = useAuth();
@@ -98,6 +98,7 @@ function AuthGate() {
       <Stack.Screen name="meals" />
       <Stack.Screen name="logged-meals" />
       <Stack.Screen name="profile" />
+      <Stack.Screen name="weight" />
     </Stack>
   );
 }

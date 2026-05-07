@@ -10,6 +10,7 @@ const foodRoutes = require('./routes/foods');
 const usdaRoutes = require('./routes/usda');
 const mealTemplateRoutes = require('./routes/mealTemplates');
 const loggedMealRoutes = require('./routes/loggedMeals');
+const weightLogRoutes = require('./routes/weightLogs');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use('/api/foods', foodRoutes);
 app.use('/api/usda', usdaRoutes);
 app.use('/api/meal-templates', mealTemplateRoutes);
 app.use('/api/logged-meals', loggedMealRoutes);
+app.use('/api/weight-logs', weightLogRoutes);
 
 // Centralized error handler — surfaces async errors as JSON.
 app.use((err, req, res, _next) => {

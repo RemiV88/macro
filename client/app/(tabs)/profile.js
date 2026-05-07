@@ -1,6 +1,6 @@
 import { View, Text, Image, Pressable, ScrollView, StyleSheet, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { CircleUser, Pencil } from 'lucide-react-native';
+import { CircleUser, Pencil, Scale } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import { colors, spacing, radius, typography } from '../../theme';
 
@@ -71,6 +71,20 @@ export default function Profile() {
         >
           <Pencil size={18} color={colors.accent} />
           <Text style={styles.editBtnText}>Edit profile</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => router.push('/weight')}
+          style={({ pressed }) => [
+            styles.glassBtn,
+            styles.editBtn,
+            pressed && styles.btnPressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Weight"
+        >
+          <Scale size={18} color={colors.accent} />
+          <Text style={styles.editBtnText}>Weight</Text>
         </Pressable>
 
         {user?.dailyCalorieTarget ? (

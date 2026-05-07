@@ -37,6 +37,7 @@ async function updateOnboarding(req, res) {
     gender,
     heightCm,
     weightKg,
+    targetWeightKg,
     hasFitnessTracker,
     activityLevel,
     dailyBurnKcal,
@@ -69,6 +70,21 @@ async function updateOnboarding(req, res) {
       return res.status(400).json({ error: 'activityLevel is required when hasFitnessTracker is false' });
     }
   }
+  if (goal === 'lose' || goal === 'gain') {
+    if (targetWeightKg == null) {
+      return res.status(400).json({ error: 'targetWeightKg is required when goal is lose or gain' });
+    }
+    const t = Number(targetWeightKg);
+    if (!Number.isFinite(t) || t <= 0) {
+      return res.status(400).json({ error: 'targetWeightKg must be greater than 0' });
+    }
+    if (goal === 'lose' && t >= Number(weightKg)) {
+      return res.status(400).json({ error: 'targetWeightKg must be less than current weight when losing' });
+    }
+    if (goal === 'gain' && t <= Number(weightKg)) {
+      return res.status(400).json({ error: 'targetWeightKg must be greater than current weight when gaining' });
+    }
+  }
 
   const targets = calculateTargets({
     age,
@@ -90,6 +106,7 @@ async function updateOnboarding(req, res) {
   user.activityLevel = hasFitnessTracker ? undefined : activityLevel;
   user.dailyBurnKcal = hasFitnessTracker ? dailyBurnKcal : undefined;
   user.goal = goal;
+  user.targetWeightKg = goal === 'maintain' ? undefined : Number(targetWeightKg);
   user.dailyCalorieTarget = targets.dailyCalorieTarget;
   user.proteinTarget = targets.proteinTarget;
   user.carbsTarget = targets.carbsTarget;

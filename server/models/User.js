@@ -39,6 +39,7 @@ const userSchema = new mongoose.Schema(
     heightCm: { type: Number },
     weightKg: { type: Number },
     startingWeightKg: { type: Number },
+    targetWeightKg: { type: Number, min: 0 },
 
     hasFitnessTracker: { type: Boolean },
     activityLevel: {

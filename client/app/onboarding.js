@@ -61,6 +61,7 @@ export default function Onboarding() {
   const [gender, setGender] = useState(null);
   const [heightCm, setHeightCm] = useState('');
   const [weightKg, setWeightKg] = useState('');
+  const [targetWeightKg, setTargetWeightKg] = useState('');
   const [hasFitnessTracker, setHasFitnessTracker] = useState(false);
   const [dailyBurnKcal, setDailyBurnKcal] = useState('');
   const [activityLevel, setActivityLevel] = useState(null);
@@ -75,6 +76,7 @@ export default function Onboarding() {
     const ageN = Number(age);
     const heightN = Number(heightCm);
     const weightN = Number(weightKg);
+    const targetN = Number(targetWeightKg);
     const burnN = Number(dailyBurnKcal);
 
     if (!ageN || !gender || !heightN || !weightN || !goal) {
@@ -89,6 +91,24 @@ export default function Onboarding() {
       setError('Please pick an activity level');
       return;
     }
+    if (goal !== 'maintain') {
+      if (!targetN) {
+        setError('Please enter your target weight');
+        return;
+      }
+      if (targetN === weightN) {
+        setError('Target weight must differ from current weight');
+        return;
+      }
+      if (goal === 'lose' && targetN >= weightN) {
+        setError('Target weight must be less than current weight');
+        return;
+      }
+      if (goal === 'gain' && targetN <= weightN) {
+        setError('Target weight must be more than current weight');
+        return;
+      }
+    }
 
     setSubmitting(true);
     try {
@@ -97,6 +117,7 @@ export default function Onboarding() {
         gender,
         heightCm: heightN,
         weightKg: weightN,
+        ...(goal !== 'maintain' ? { targetWeightKg: targetN } : {}),
         hasFitnessTracker,
         ...(hasFitnessTracker
           ? { dailyBurnKcal: burnN }
@@ -161,6 +182,20 @@ export default function Onboarding() {
           editable={!submitting}
         />
       </View>
+
+      {goal && goal !== 'maintain' ? (
+        <View style={styles.field}>
+          <Text style={styles.label}>Target weight (kg)</Text>
+          <TextInput
+            style={styles.input}
+            placeholderTextColor={colors.textDim}
+            keyboardType="decimal-pad"
+            value={targetWeightKg}
+            onChangeText={setTargetWeightKg}
+            editable={!submitting}
+          />
+        </View>
+      ) : null}
 
       <View style={styles.field}>
         <View style={styles.row}>
