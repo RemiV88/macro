@@ -6,11 +6,18 @@ const {
   createLoggedMeal,
   updateLoggedMeal,
   deleteLoggedMeal,
+  getStreak,
+  getDailySummary,
 } = require('../controllers/loggedMealController');
 
 const router = express.Router();
 
 router.use(requireAuth);
+
+// IMPORTANT: keep these named routes above /:id, otherwise Express will try to
+// treat 'streak' / 'summary' as a logged-meal id and return 404.
+router.get('/streak', getStreak);
+router.get('/summary', getDailySummary);
 
 router.get('/', listLoggedMeals);
 router.post('/', createLoggedMeal);

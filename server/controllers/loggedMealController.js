@@ -204,6 +204,118 @@ async function updateLoggedMeal(req, res) {
   res.json({ loggedMeal: meal });
 }
 
+// Walk back from "today" in the user's local time, counting consecutive days
+// that contain ≥1 LoggedMeal. We can't trust the client to compute this — if
+// the user has an empty today we still continue from yesterday (today doesn't
+// break a streak that earned its first day yesterday).
+async function getStreak(req, res) {
+  // tz query param accepted for future use; for now we treat dates as UTC,
+  // which matches what the rest of the app stores (date is a UTC midnight).
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+
+  // Look back up to 365 days. Past that, returning the cap is fine.
+  const MAX_LOOKBACK_DAYS = 365;
+  const since = new Date(today.getTime() - MAX_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
+
+  // Pull only the dates field for every meal in the window — far cheaper than
+  // counting per day with a separate query.
+  const meals = await LoggedMeal.find(
+    { userId: req.user._id, date: { $gte: since, $lte: today } },
+    { date: 1 }
+  ).lean();
+
+  const daysWithMeals = new Set();
+  for (const m of meals) {
+    const d = new Date(m.date);
+    d.setUTCHours(0, 0, 0, 0);
+    daysWithMeals.add(d.getTime());
+  }
+
+  let streak = 0;
+  let cursor = today.getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  // Special case: empty today shouldn't break a streak that's actively
+  // building — start counting from yesterday if today is empty.
+  if (!daysWithMeals.has(cursor)) {
+    cursor -= dayMs;
+  }
+
+  while (daysWithMeals.has(cursor)) {
+    streak++;
+    cursor -= dayMs;
+  }
+
+  res.json({ streak });
+}
+
+// Per-day totals for a date range. Used by the History calendar to color-code
+// each cell. Range is hard-capped at 60 days to keep payloads small.
+async function getDailySummary(req, res) {
+  const fromStr = req.query.from;
+  const toStr = req.query.to;
+  const from = parseLocalDate(fromStr);
+  const to = parseLocalDate(toStr);
+  if (!from || !to) {
+    return res.status(400).json({ error: 'from and to are required (YYYY-MM-DD)' });
+  }
+  if (to.getTime() < from.getTime()) {
+    return res.status(400).json({ error: 'to must be on or after from' });
+  }
+  const dayMs = 24 * 60 * 60 * 1000;
+  const spanDays = Math.round((to.getTime() - from.getTime()) / dayMs) + 1;
+  if (spanDays > 60) {
+    return res.status(400).json({ error: 'range must be 60 days or fewer' });
+  }
+  const next = new Date(to.getTime() + dayMs);
+
+  const meals = await LoggedMeal.find({
+    userId: req.user._id,
+    date: { $gte: from, $lt: next },
+  }).lean();
+
+  // Build a map keyed by YYYY-MM-DD. Aggregate macros per day, then emit one
+  // row per day in [from, to] so the client can render zeros for empty days
+  // without filtering.
+  const byDate = new Map();
+  for (const m of meals) {
+    const d = new Date(m.date);
+    d.setUTCHours(0, 0, 0, 0);
+    const key = d.toISOString().slice(0, 10);
+    let agg = byDate.get(key);
+    if (!agg) {
+      agg = { calories: 0, protein: 0, carbs: 0, fat: 0, mealCount: 0 };
+      byDate.set(key, agg);
+    }
+    for (const it of m.items || []) {
+      const factor = (it.portionGrams || 0) / 100;
+      agg.calories += (it.caloriesPer100g || 0) * factor;
+      agg.protein += (it.proteinPer100g || 0) * factor;
+      agg.carbs += (it.carbsPer100g || 0) * factor;
+      agg.fat += (it.fatPer100g || 0) * factor;
+    }
+    agg.mealCount++;
+  }
+
+  const days = [];
+  for (let t = from.getTime(); t <= to.getTime(); t += dayMs) {
+    const d = new Date(t);
+    const key = d.toISOString().slice(0, 10);
+    const agg = byDate.get(key) || { calories: 0, protein: 0, carbs: 0, fat: 0, mealCount: 0 };
+    days.push({
+      date: key,
+      calories: Math.round(agg.calories),
+      protein: Math.round(agg.protein),
+      carbs: Math.round(agg.carbs),
+      fat: Math.round(agg.fat),
+      mealCount: agg.mealCount,
+    });
+  }
+
+  res.json({ days });
+}
+
 async function deleteLoggedMeal(req, res) {
   if (!mongoose.isValidObjectId(req.params.id)) {
     return res.status(404).json({ error: 'Logged meal not found' });
@@ -222,4 +334,6 @@ module.exports = {
   createLoggedMeal,
   updateLoggedMeal,
   deleteLoggedMeal,
+  getStreak,
+  getDailySummary,
 };

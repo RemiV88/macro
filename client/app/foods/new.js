@@ -1,8 +1,11 @@
 import { useCallback, useState } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import FoodForm from '../../components/FoodForm';
+import ScreenBackground from '../../components/ScreenBackground';
 import { createFood } from '../../api/foods';
 import { consumePendingPick } from './_pendingPick';
+import { colors } from '../../theme';
 
 export default function NewFood() {
   const router = useRouter();
@@ -36,13 +39,20 @@ export default function NewFood() {
   }
 
   return (
-    <FoodForm
-      submitLabel="Add food"
-      onSubmit={handleSubmit}
-      onCancel={handleCancel}
-      onSearch={handleSearch}
-      hydrate={hydrate}
-      submitting={submitting}
-    />
+    <View style={styles.outer}>
+      <ScreenBackground />
+      <FoodForm
+        submitLabel="Add food"
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        onSearch={handleSearch}
+        hydrate={hydrate}
+        submitting={submitting}
+      />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  outer: { flex: 1, backgroundColor: colors.bg },
+});

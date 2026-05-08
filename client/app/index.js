@@ -1,4 +1,5 @@
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import ScreenBackground from '../components/ScreenBackground';
 import { colors } from '../theme';
 
 // Index is just a placeholder — _layout.js redirects everyone here either to
@@ -6,6 +7,7 @@ import { colors } from '../theme';
 export default function Index() {
   return (
     <View style={styles.container}>
+      <ScreenBackground />
       <ActivityIndicator color={colors.accent} />
     </View>
   );

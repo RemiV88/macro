@@ -20,6 +20,7 @@ import {
 import ChipRow from '../../../components/ChipRow';
 import Button from '../../../components/Button';
 import { useConfirm } from '../../../components/ConfirmModal';
+import ScreenBackground from '../../../components/ScreenBackground';
 import {
   MEAL_SLOTS,
   slotLabel,
@@ -127,6 +128,7 @@ export default function EditLoggedMeal() {
   if (loadError) {
     return (
       <View style={styles.center}>
+        <ScreenBackground />
         <Text style={styles.errorText}>{loadError}</Text>
       </View>
     );
@@ -134,17 +136,20 @@ export default function EditLoggedMeal() {
   if (!meal) {
     return (
       <View style={styles.center}>
+        <ScreenBackground />
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
+    <View style={styles.outer}>
+      <ScreenBackground />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
       <View style={styles.field}>
         <Text style={styles.label}>Meal slot</Text>
         <ChipRow
@@ -230,13 +235,21 @@ export default function EditLoggedMeal() {
       />
 
       {confirmModal}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bg },
-  container: { padding: spacing.xl, gap: spacing.lg },
+  outer: { flex: 1, backgroundColor: colors.bg },
+  scroll: { flex: 1 },
+  container: {
+    padding: spacing.xl,
+    gap: spacing.lg,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+  },
   center: {
     flex: 1,
     alignItems: 'center',

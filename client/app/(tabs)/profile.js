@@ -2,6 +2,7 @@ import { View, Text, Image, Pressable, ScrollView, StyleSheet, Platform } from '
 import { useRouter } from 'expo-router';
 import { CircleUser, Pencil, Scale } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
+import ScreenBackground from '../../components/ScreenBackground';
 import { colors, spacing, radius, typography } from '../../theme';
 
 const AVATAR_SIZE = 88;
@@ -45,7 +46,9 @@ export default function Profile() {
   const stats = buildStats(user);
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
+    <View style={styles.container}>
+      <ScreenBackground />
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.page}>
       <View style={styles.outerCard}>
         <View style={styles.identity}>
           <View style={styles.avatar}>
@@ -115,11 +118,13 @@ export default function Profile() {
         ) : null}
       </View>
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bg },
+  container: { flex: 1, backgroundColor: colors.bg },
+  scroll: { flex: 1 },
   page: {
     padding: spacing.xl,
     alignItems: 'center',

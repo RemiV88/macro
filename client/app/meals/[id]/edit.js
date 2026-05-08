@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, Platform, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import MealTemplateForm from '../../../components/MealTemplateForm';
+import ScreenBackground from '../../../components/ScreenBackground';
 import { useConfirm } from '../../../components/ConfirmModal';
 import {
   getMealTemplate,
@@ -77,6 +78,7 @@ export default function EditMealTemplate() {
   if (loadError) {
     return (
       <View style={styles.center}>
+        <ScreenBackground />
         <Text style={styles.errorText}>{loadError}</Text>
       </View>
     );
@@ -85,13 +87,15 @@ export default function EditMealTemplate() {
   if (!template) {
     return (
       <View style={styles.center}>
+        <ScreenBackground />
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
 
   return (
-    <>
+    <View style={styles.outer}>
+      <ScreenBackground />
       <MealTemplateForm
         initialTemplate={template}
         submitLabel="Save"
@@ -102,11 +106,12 @@ export default function EditMealTemplate() {
         deleting={deleting}
       />
       {confirmModal}
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outer: { flex: 1, backgroundColor: colors.bg },
   center: {
     flex: 1,
     alignItems: 'center',

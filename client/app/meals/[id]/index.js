@@ -13,6 +13,7 @@ import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-rou
 import { Pencil, Trash2, Zap, BicepsFlexed, Wheat, Cuboid } from 'lucide-react-native';
 import { getMealTemplate, deleteMealTemplate } from '../../../api/mealTemplates';
 import { useConfirm } from '../../../components/ConfirmModal';
+import ScreenBackground from '../../../components/ScreenBackground';
 import {
   computeMealTotals,
   itemKcal,
@@ -79,6 +80,7 @@ export default function MealTemplateDetail() {
   if (loadError) {
     return (
       <View style={styles.center}>
+        <ScreenBackground />
         <Stack.Screen options={{ title: 'Meal' }} />
         <Text style={styles.errorText}>{loadError}</Text>
       </View>
@@ -88,6 +90,7 @@ export default function MealTemplateDetail() {
   if (!template) {
     return (
       <View style={styles.center}>
+        <ScreenBackground />
         <Stack.Screen options={{ title: 'Meal' }} />
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
@@ -104,7 +107,9 @@ export default function MealTemplateDetail() {
   ];
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+    <View style={styles.outer}>
+      <ScreenBackground />
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       <Stack.Screen options={{ title: template.name }} />
 
       <View style={styles.headerBlock}>
@@ -183,14 +188,19 @@ export default function MealTemplateDetail() {
 
       {confirmModal}
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bg },
+  outer: { flex: 1, backgroundColor: colors.bg },
+  scroll: { flex: 1 },
   container: {
     padding: spacing.xl,
     gap: spacing.lg,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
   },
   center: {
     flex: 1,

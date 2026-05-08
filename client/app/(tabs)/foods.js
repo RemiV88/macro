@@ -15,6 +15,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { listFoods, deleteFood } from '../../api/foods';
 import FoodCard from '../../components/FoodCard';
 import { useConfirm } from '../../components/ConfirmModal';
+import ScreenBackground from '../../components/ScreenBackground';
 import { colors, spacing, radius, typography } from '../../theme';
 
 function reportError(msg) {
@@ -97,6 +98,7 @@ export default function FoodsScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
+        <ScreenBackground />
         {header}
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.accent} />
@@ -108,6 +110,7 @@ export default function FoodsScreen() {
   if (error) {
     return (
       <View style={styles.container}>
+        <ScreenBackground />
         {header}
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
@@ -122,6 +125,7 @@ export default function FoodsScreen() {
   if (foods.length === 0) {
     return (
       <View style={styles.container}>
+        <ScreenBackground />
         {header}
         <View style={styles.center}>
           <Text style={styles.emptyText}>No foods yet.</Text>
@@ -141,6 +145,7 @@ export default function FoodsScreen() {
 
   return (
     <View style={styles.container}>
+      <ScreenBackground />
       {header}
       <FlatList
         key={numColumns}

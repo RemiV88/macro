@@ -10,8 +10,9 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { X, Plus, Save } from 'lucide-react-native';
+import { X, Plus, Save, ChefHat } from 'lucide-react-native';
 import FoodPickerModal from './FoodPickerModal';
+import RecipePickerModal from './RecipePickerModal';
 import ChipRow from './ChipRow';
 import { createLoggedMeal, localDateString } from '../api/loggedMeals';
 import {
@@ -24,10 +25,11 @@ import { colors, spacing, radius, typography } from '../theme';
 
 const SLOT_OPTIONS = MEAL_SLOTS.map((s) => ({ value: s, label: slotLabel(s) }));
 
-export default function LogBuildModal({ visible, onClose, onLogged, defaultSlot = 'lunch' }) {
+export default function LogBuildModal({ visible, onClose, onLogged, defaultSlot = 'lunch', date }) {
   const [slot, setSlot] = useState(defaultSlot);
   const [items, setItems] = useState([]);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [recipePickerOpen, setRecipePickerOpen] = useState(false);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -69,7 +71,7 @@ export default function LogBuildModal({ visible, onClose, onLogged, defaultSlot 
     try {
       const logged = await createLoggedMeal({
         mealSlot: slot,
-        date: localDateString(),
+        date: date || localDateString(),
         items: items.map((it) => ({
           foodId: it.foodId || null,
           foodName: it.name,
@@ -133,19 +135,34 @@ export default function LogBuildModal({ visible, onClose, onLogged, defaultSlot 
                   ))}
                 </View>
               )}
-              <Pressable
-                onPress={() => setPickerOpen(true)}
-                disabled={submitting}
-                style={({ pressed }) => [
-                  styles.glassBtn,
-                  styles.addBtn,
-                  pressed && styles.btnPressed,
-                  submitting && styles.btnDisabled,
-                ]}
-              >
-                <Plus size={18} color={colors.accent} />
-                <Text style={styles.addBtnText}>Add food</Text>
-              </Pressable>
+              <View style={styles.addRow}>
+                <Pressable
+                  onPress={() => setPickerOpen(true)}
+                  disabled={submitting}
+                  style={({ pressed }) => [
+                    styles.glassBtn,
+                    styles.addBtn,
+                    pressed && styles.btnPressed,
+                    submitting && styles.btnDisabled,
+                  ]}
+                >
+                  <Plus size={18} color={colors.accent} />
+                  <Text style={styles.addBtnText}>Add food</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setRecipePickerOpen(true)}
+                  disabled={submitting}
+                  style={({ pressed }) => [
+                    styles.glassBtn,
+                    styles.addBtn,
+                    pressed && styles.btnPressed,
+                    submitting && styles.btnDisabled,
+                  ]}
+                >
+                  <ChefHat size={18} color={colors.accent} />
+                  <Text style={styles.addBtnText}>Add recipe</Text>
+                </Pressable>
+              </View>
             </View>
 
             {items.length > 0 ? (
@@ -189,6 +206,13 @@ export default function LogBuildModal({ visible, onClose, onLogged, defaultSlot 
       onPick={handlePick}
       title="Add food to meal"
       allowQuickAdd
+    />
+
+    <RecipePickerModal
+      visible={recipePickerOpen}
+      onClose={() => setRecipePickerOpen(false)}
+      onPick={handlePick}
+      title="Add recipe to meal"
     />
     </>
   );
@@ -253,6 +277,11 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   itemList: { gap: spacing.sm },
+  addRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',

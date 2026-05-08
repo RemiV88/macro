@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { Save } from 'lucide-react-native';
 import { AvatarPickerWithCaption } from '../../components/AvatarPicker';
 import Input from '../../components/Input';
+import ScreenBackground from '../../components/ScreenBackground';
 import { useAuth } from '../../context/AuthContext';
 import { updateMe } from '../../api/users';
 import { colors, spacing, radius, typography } from '../../theme';
@@ -52,10 +53,12 @@ export default function EditProfile() {
   }
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
+    <View style={styles.outer}>
+      <ScreenBackground />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
     >
       <View style={styles.avatarBlock}>
         <AvatarPickerWithCaption
@@ -111,12 +114,14 @@ export default function EditProfile() {
           <Text style={styles.cancelText}>Cancel</Text>
         </Pressable>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bg },
+  outer: { flex: 1, backgroundColor: colors.bg },
+  scroll: { flex: 1 },
   container: {
     padding: spacing.xl,
     gap: spacing.lg,

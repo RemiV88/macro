@@ -14,6 +14,7 @@ import { Pencil, Trash2, Zap, BicepsFlexed, Wheat, Cuboid } from 'lucide-react-n
 import { getFood, deleteFood } from '../../../api/foods';
 import { useConfirm } from '../../../components/ConfirmModal';
 import { categoryIcons } from '../../../components/categoryIcons';
+import ScreenBackground from '../../../components/ScreenBackground';
 import { colors, spacing, radius, typography } from '../../../theme';
 
 function categoryLabel(c) {
@@ -79,6 +80,7 @@ export default function FoodDetail() {
   if (loadError) {
     return (
       <View style={styles.center}>
+        <ScreenBackground />
         <Stack.Screen options={{ title: 'Food' }} />
         <Text style={styles.errorText}>{loadError}</Text>
       </View>
@@ -88,6 +90,7 @@ export default function FoodDetail() {
   if (!food) {
     return (
       <View style={styles.center}>
+        <ScreenBackground />
         <Stack.Screen options={{ title: 'Food' }} />
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
@@ -102,7 +105,9 @@ export default function FoodDetail() {
   ];
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+    <View style={styles.outer}>
+      <ScreenBackground />
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       <Stack.Screen options={{ title: food.name }} />
 
       <View style={styles.headerBlock}>
@@ -169,14 +174,19 @@ export default function FoodDetail() {
 
       {confirmModal}
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bg },
+  outer: { flex: 1, backgroundColor: colors.bg },
+  scroll: { flex: 1 },
   container: {
     padding: spacing.xl,
     gap: spacing.lg,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
   },
   center: {
     flex: 1,

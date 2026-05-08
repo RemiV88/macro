@@ -13,7 +13,7 @@ import { AuthProvider, useAuth } from '../context/AuthContext';
 import { colors, typography } from '../theme';
 
 const PUBLIC_ROUTES = new Set(['login', 'signup']);
-const AUTHED_STACKS = new Set(['foods', 'meals', 'logged-meals', 'profile', 'weight']);
+const AUTHED_STACKS = new Set(['foods', 'meals', 'logged-meals', 'profile', 'weight', 'history']);
 
 function AuthGate() {
   const { user, loading } = useAuth();
@@ -59,6 +59,9 @@ function AuthGate() {
     <Stack
       screenOptions={{
         headerShown: false,
+        // Solid base — each screen mounts its own ScreenBackground inside its
+        // own root View, so screens fully cover each other on navigation while
+        // the pattern shows beneath each screen's content.
         contentStyle: { backgroundColor: colors.bg },
       }}
     >
@@ -99,6 +102,7 @@ function AuthGate() {
       <Stack.Screen name="logged-meals" />
       <Stack.Screen name="profile" />
       <Stack.Screen name="weight" />
+      <Stack.Screen name="history" />
     </Stack>
   );
 }

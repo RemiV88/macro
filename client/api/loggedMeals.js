@@ -25,6 +25,16 @@ export async function deleteLoggedMeal(id) {
   return res.data;
 }
 
+export async function getStreak() {
+  const res = await api.get('/logged-meals/streak');
+  return res.data.streak;
+}
+
+export async function getDailySummary(from, to) {
+  const res = await api.get('/logged-meals/summary', { params: { from, to } });
+  return res.data.days;
+}
+
 export function localDateString(d = new Date()) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');

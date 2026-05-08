@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,17 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import {
+  useFocusEffect,
+  useLocalSearchParams,
+  useNavigation,
+  useRouter,
+} from 'expo-router';
 import { Plus } from 'lucide-react-native';
+import { useEffect } from 'react';
 import {
   listLoggedMeals,
   deleteLoggedMeal,
-  localDateString,
-  getStreak,
 } from '../../api/loggedMeals';
 import MealCard from '../../components/MealCard';
 import LogActionSheet from '../../components/LogActionSheet';
@@ -24,14 +28,12 @@ import LogTemplateModal from '../../components/LogTemplateModal';
 import LogBuildModal from '../../components/LogBuildModal';
 import LogSingleFoodModal from '../../components/LogSingleFoodModal';
 import LogRecipeModal from '../../components/LogRecipeModal';
-import StreakFlame from '../../components/StreakFlame';
-import ScreenBackground from '../../components/ScreenBackground';
 import { useConfirm } from '../../components/ConfirmModal';
+import ScreenBackground from '../../components/ScreenBackground';
 import { useAuth } from '../../context/AuthContext';
 import {
   MEAL_SLOTS,
   slotLabel,
-  computeMealTotals,
   computeDayTotals,
   normalizeLoggedItem,
 } from '../../utils/macros';
@@ -45,17 +47,27 @@ function reportError(msg) {
   }
 }
 
-function todayLabel() {
-  const d = new Date();
-  return d.toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
+// Treat the path param as a local YYYY-MM-DD; format it for human readers.
+function formatDate(dateStr) {
+  if (typeof dateStr !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr || '';
+  }
+  const [y, m, d] = dateStr.split('-').map(Number);
+  // Construct in local time to avoid Sun-being-Sat issues for far-back dates.
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString(undefined, {
+    weekday: 'short',
     day: 'numeric',
+    month: 'long',
+    year: 'numeric',
   });
 }
 
-export default function Today() {
+export default function DayDetail() {
+  const { date } = useLocalSearchParams();
+  const dateStr = Array.isArray(date) ? date[0] : date;
   const router = useRouter();
+  const navigation = useNavigation();
   const { user } = useAuth();
   const { ask: askConfirm, modal: confirmModal } = useConfirm();
 
@@ -63,8 +75,6 @@ export default function Today() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const [streak, setStreak] = useState(0);
-  const hasLoadedRef = useRef(false);
 
   const [actionSheetOpen, setActionSheetOpen] = useState(false);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
@@ -73,30 +83,31 @@ export default function Today() {
   const [recipeModalOpen, setRecipeModalOpen] = useState(false);
   const [pendingSlot, setPendingSlot] = useState(null);
 
-  const load = useCallback(async ({ silent = false } = {}) => {
-    if (!silent) setLoading(true);
-    setError(null);
-    try {
-      // Fire both requests in parallel — streak is independent of the meal
-      // list. A streak failure shouldn't break the day view, so swallow it.
-      const [data, s] = await Promise.all([
-        listLoggedMeals(localDateString()),
-        getStreak().catch(() => null),
-      ]);
-      setLoggedMeals(data);
-      if (typeof s === 'number') setStreak(s);
-      hasLoadedRef.current = true;
-    } catch (err) {
-      setError(err?.response?.data?.error || err.message || 'Could not load');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  // Set the screen title to the formatted date once we have it.
+  useEffect(() => {
+    navigation.setOptions?.({ title: formatDate(dateStr) });
+  }, [navigation, dateStr]);
+
+  const load = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!silent) setLoading(true);
+      setError(null);
+      try {
+        const data = await listLoggedMeals(dateStr);
+        setLoggedMeals(data);
+      } catch (err) {
+        setError(err?.response?.data?.error || err.message || 'Could not load');
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [dateStr]
+  );
 
   useFocusEffect(
     useCallback(() => {
-      load({ silent: hasLoadedRef.current });
+      load();
     }, [load])
   );
 
@@ -170,13 +181,6 @@ export default function Today() {
           />
         }
       >
-        <View style={styles.headerBlock}>
-          <Text style={styles.title}>Today</Text>
-          <Text style={styles.subtitle}>{todayLabel()}</Text>
-        </View>
-
-        <StreakFlame streak={streak} />
-
         <View style={styles.totalsCard}>
           <View style={styles.totalsRow}>
             <Text style={styles.totalsKcal}>{Math.round(totals.kcal).toLocaleString()}</Text>
@@ -203,7 +207,7 @@ export default function Today() {
           ]}
         >
           <Plus size={18} color={colors.accent} />
-          <Text style={styles.logBtnText}>Log a meal</Text>
+          <Text style={styles.logBtnText}>Log meal to this day</Text>
         </Pressable>
 
         {loading ? (
@@ -242,22 +246,26 @@ export default function Today() {
         onClose={() => setTemplateModalOpen(false)}
         onLogged={afterLogged}
         defaultSlot={pendingSlot}
+        date={dateStr}
       />
       <LogBuildModal
         visible={buildModalOpen}
         onClose={() => setBuildModalOpen(false)}
         onLogged={afterLogged}
         defaultSlot={pendingSlot || 'lunch'}
+        date={dateStr}
       />
       <LogSingleFoodModal
         visible={singleModalOpen}
         onClose={() => setSingleModalOpen(false)}
         onLogged={afterLogged}
+        date={dateStr}
       />
       <LogRecipeModal
         visible={recipeModalOpen}
         onClose={() => setRecipeModalOpen(false)}
         onLogged={afterLogged}
+        date={dateStr}
       />
       {confirmModal}
     </View>
@@ -324,19 +332,6 @@ const styles = StyleSheet.create({
     maxWidth: 480,
     alignSelf: 'center',
   },
-  headerBlock: {
-    gap: spacing.xs,
-  },
-  title: {
-    color: colors.text,
-    fontSize: typography.sizes.h1,
-    fontFamily: typography.fontFamily.bold,
-  },
-  subtitle: {
-    color: colors.textMuted,
-    fontSize: typography.sizes.body,
-    fontFamily: typography.fontFamily.medium,
-  },
   totalsCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -344,11 +339,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.lg,
     gap: spacing.md,
-    ...Platform.select({
-      web: {
-        boxShadow: '0 2px 12px rgba(0, 148, 232, 0.06)',
-      },
-    }),
   },
   totalsRow: {
     flexDirection: 'row',
@@ -408,7 +398,6 @@ const styles = StyleSheet.create({
     ...Platform.select({
       web: {
         boxShadow: '0 2px 12px rgba(0, 148, 232, 0.12)',
-        transitionDuration: '120ms',
       },
       default: {
         elevation: 2,
@@ -456,9 +445,7 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.body,
     fontFamily: typography.fontFamily.medium,
   },
-  slotBlock: {
-    gap: spacing.sm,
-  },
+  slotBlock: { gap: spacing.sm },
   slotHeader: {
     flexDirection: 'row',
     alignItems: 'center',

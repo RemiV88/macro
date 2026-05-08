@@ -26,7 +26,17 @@ const MODE_OPTIONS = [
 const TABS = [
   { value: 'library', label: 'My Foods' },
   { value: 'usda', label: 'Search USDA' },
+  { value: 'manual', label: 'Manual entry' },
 ];
+
+const EMPTY_MANUAL = {
+  name: '',
+  caloriesPer100g: '',
+  proteinPer100g: '0',
+  carbsPer100g: '0',
+  fatPer100g: '0',
+  portionGrams: '100',
+};
 
 const USDA_DEBOUNCE_MS = 400;
 
@@ -87,6 +97,12 @@ export default function FoodPickerModal({
   const [servings, setServings] = useState('1');
   const [addError, setAddError] = useState(null);
 
+  // Manual-entry state — independent of library/USDA so switching tabs doesn't
+  // bleed inputs. Numbers are kept as strings while editing so the input can
+  // hold partial values (e.g. "0." mid-typing).
+  const [manual, setManual] = useState(EMPTY_MANUAL);
+  const [manualError, setManualError] = useState(null);
+
   // Reload the user's library each time the modal opens — fresh data after
   // adds on the Foods tab.
   useEffect(() => {
@@ -125,6 +141,8 @@ export default function FoodPickerModal({
     setGrams('100');
     setServings('1');
     setAddError(null);
+    setManual(EMPTY_MANUAL);
+    setManualError(null);
   }, [visible]);
 
   // Debounced USDA search.
@@ -183,6 +201,50 @@ export default function FoodPickerModal({
     const next = (Number.isFinite(n) ? n : 0) + delta;
     if (next < 0) return;
     setServings(String(Math.round(next * 100) / 100));
+  }
+
+  function handleManualAdd() {
+    setManualError(null);
+    const name = (manual.name || '').trim();
+    if (!name) {
+      setManualError('Name is required');
+      return;
+    }
+    const numeric = {
+      caloriesPer100g: Number(manual.caloriesPer100g),
+      proteinPer100g: Number(manual.proteinPer100g),
+      carbsPer100g: Number(manual.carbsPer100g),
+      fatPer100g: Number(manual.fatPer100g),
+      portionGrams: Number(manual.portionGrams),
+    };
+    for (const [key, val] of Object.entries(numeric)) {
+      if (!Number.isFinite(val) || val < 0) {
+        setManualError(`${key === 'portionGrams' ? 'Portion' : key.replace('Per100g', '')} must be 0 or more`);
+        return;
+      }
+    }
+    if (numeric.portionGrams <= 0) {
+      setManualError('Portion must be greater than 0');
+      return;
+    }
+
+    // Same inline-item shape as USDA picks. foodId=null → not saved to the
+    // user's library, one-off only.
+    onPick?.({
+      foodId: null,
+      foodName: name,
+      portionGrams: numeric.portionGrams,
+      caloriesPer100g: numeric.caloriesPer100g,
+      proteinPer100g: numeric.proteinPer100g,
+      carbsPer100g: numeric.carbsPer100g,
+      fatPer100g: numeric.fatPer100g,
+    });
+
+    if (allowQuickAdd) {
+      setManual(EMPTY_MANUAL);
+    } else {
+      onClose?.();
+    }
   }
 
   function handleAdd() {
@@ -297,7 +359,7 @@ export default function FoodPickerModal({
                 onQueryChange={setLibraryQuery}
                 onSelect={(f) => selectFood(normalizeLibrary(f))}
               />
-            ) : (
+            ) : tab === 'usda' ? (
               <UsdaList
                 results={usdaResults}
                 loading={usdaLoading}
@@ -306,6 +368,13 @@ export default function FoodPickerModal({
                 query={usdaQuery}
                 onQueryChange={setUsdaQuery}
                 onSelect={(f) => selectFood(normalizeUsda(f))}
+              />
+            ) : (
+              <ManualEntry
+                values={manual}
+                onChange={setManual}
+                onAdd={handleManualAdd}
+                error={manualError}
               />
             )}
           </Pressable>
@@ -407,6 +476,63 @@ function UsdaList({ results, loading, error, hasSearched, query, onQueryChange, 
         )}
       </View>
     </View>
+  );
+}
+
+function ManualEntry({ values, onChange, onAdd, error }) {
+  function update(key, v) {
+    onChange({ ...values, [key]: v });
+  }
+  const fields = [
+    { key: 'name', label: 'Name', placeholder: 'e.g. Test snack', kind: 'text' },
+    { key: 'caloriesPer100g', label: 'Calories per 100g', kind: 'number' },
+    { key: 'proteinPer100g', label: 'Protein per 100g (g)', kind: 'number' },
+    { key: 'carbsPer100g', label: 'Carbs per 100g (g)', kind: 'number' },
+    { key: 'fatPer100g', label: 'Fat per 100g (g)', kind: 'number' },
+    { key: 'portionGrams', label: 'Portion (g)', kind: 'number' },
+  ];
+  return (
+    <ScrollView
+      style={styles.portionScroll}
+      contentContainerStyle={styles.portionScrollContent}
+      keyboardShouldPersistTaps="handled"
+    >
+      <Text style={styles.usdaHint}>Quick one-off entry — won't be saved to your library.</Text>
+      {fields.map((f) => (
+        <View key={f.key} style={styles.field}>
+          <Text style={styles.fieldLabel}>{f.label}</Text>
+          <TextInput
+            value={values[f.key]}
+            onChangeText={(v) => update(f.key, v)}
+            placeholder={f.placeholder}
+            placeholderTextColor={colors.textDim}
+            keyboardType={
+              f.kind === 'number'
+                ? Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'
+                : 'default'
+            }
+            autoCapitalize={f.kind === 'number' ? 'none' : 'sentences'}
+            autoCorrect={f.kind === 'text'}
+            style={styles.fieldInput}
+          />
+        </View>
+      ))}
+
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+      <Pressable
+        onPress={onAdd}
+        style={({ pressed }) => [
+          styles.glassBtn,
+          styles.addBtn,
+          pressed && styles.btnPressed,
+        ]}
+        accessibilityRole="button"
+      >
+        <Plus size={18} color={colors.accent} />
+        <Text style={styles.addBtnText}>Add to meal</Text>
+      </Pressable>
+    </ScrollView>
   );
 }
 

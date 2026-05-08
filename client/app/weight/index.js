@@ -21,6 +21,7 @@ import {
   deleteWeightLog,
 } from '../../api/weightLogs';
 import { useConfirm } from '../../components/ConfirmModal';
+import ScreenBackground from '../../components/ScreenBackground';
 import { localDateString } from '../../api/loggedMeals';
 import { colors, spacing, radius, typography } from '../../theme';
 
@@ -420,10 +421,12 @@ export default function WeightScreen() {
   const sortedDesc = useMemo(() => [...sortedAsc].reverse(), [sortedAsc]);
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.page}
-      onLayout={(e) => {
+    <View style={styles.outer}>
+      <ScreenBackground />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.page}
+        onLayout={(e) => {
         // Track the scroll-view width so the chart sizes responsively.
         // Clamp to the container's maxWidth (480) so the chart never overflows
         // the card on wider screens (web).
@@ -524,12 +527,14 @@ export default function WeightScreen() {
         initialWeight={todaysEntry?.weightKg}
       />
       {confirmEl}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bg },
+  outer: { flex: 1, backgroundColor: colors.bg },
+  scroll: { flex: 1 },
   page: {
     padding: spacing.xl,
     alignItems: 'center',

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
+import ScreenBackground from '../components/ScreenBackground';
 import { colors, spacing, radius, typography } from '../theme';
 
 const GENDERS = [
@@ -134,11 +135,13 @@ export default function Onboarding() {
   }
 
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
+    <View style={styles.outer}>
+      <ScreenBackground />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
       <Text style={styles.title}>Tell us about you</Text>
       <Text style={styles.subtitle}>We'll use this to set your daily targets.</Text>
 
@@ -252,16 +255,17 @@ export default function Onboarding() {
           <Text style={styles.buttonText}>Save & continue</Text>
         )}
       </Pressable>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bg },
+  outer: { flex: 1, backgroundColor: colors.bg },
+  scroll: { flex: 1 },
   container: {
     padding: spacing.xl,
     gap: spacing.lg,
-    backgroundColor: colors.bg,
   },
   title: {
     fontSize: typography.sizes.h1,

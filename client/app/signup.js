@@ -13,6 +13,7 @@ import {
 import { Link } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { AvatarPickerWithCaption } from '../components/AvatarPicker';
+import ScreenBackground from '../components/ScreenBackground';
 import { colors, spacing, radius, typography } from '../theme';
 
 export default function Signup() {
@@ -55,6 +56,7 @@ export default function Signup() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      <ScreenBackground />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"

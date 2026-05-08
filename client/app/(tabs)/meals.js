@@ -16,6 +16,7 @@ import { listMealTemplates, deleteMealTemplate } from '../../api/mealTemplates';
 import MealCard from '../../components/MealCard';
 import { useConfirm } from '../../components/ConfirmModal';
 import { normalizeTemplateItem } from '../../utils/macros';
+import ScreenBackground from '../../components/ScreenBackground';
 import { colors, spacing, radius, typography } from '../../theme';
 
 function reportError(msg) {
@@ -98,6 +99,7 @@ export default function MealsScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
+        <ScreenBackground />
         {header}
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.accent} />
@@ -109,6 +111,7 @@ export default function MealsScreen() {
   if (error) {
     return (
       <View style={styles.container}>
+        <ScreenBackground />
         {header}
         <View style={styles.center}>
           <Text style={styles.errorText}>{error}</Text>
@@ -123,6 +126,7 @@ export default function MealsScreen() {
   if (templates.length === 0) {
     return (
       <View style={styles.container}>
+        <ScreenBackground />
         {header}
         <View style={styles.center}>
           <Text style={styles.emptyText}>No meal templates yet.</Text>
@@ -144,6 +148,7 @@ export default function MealsScreen() {
 
   return (
     <View style={styles.container}>
+      <ScreenBackground />
       {header}
       <FlatList
         key={numColumns}

@@ -28,7 +28,7 @@ const SLOT_FILTER_OPTIONS = [
   ...SLOT_OPTIONS,
 ];
 
-export default function LogTemplateModal({ visible, onClose, onLogged, defaultSlot }) {
+export default function LogTemplateModal({ visible, onClose, onLogged, defaultSlot, date }) {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -89,7 +89,7 @@ export default function LogTemplateModal({ visible, onClose, onLogged, defaultSl
       const logged = await createLoggedMeal({
         templateId: selected._id,
         mealSlot: slot,
-        date: localDateString(),
+        date: date || localDateString(),
       });
       onLogged?.(logged);
     } catch (err) {

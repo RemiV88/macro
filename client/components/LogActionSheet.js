@@ -17,6 +17,12 @@ export default function LogActionSheet({ visible, onClose, onChoose }) {
       Icon: ChefHat,
     },
     {
+      key: 'recipe',
+      label: 'Recipe',
+      hint: 'Find a recipe and log it',
+      Icon: ChefHat,
+    },
+    {
       key: 'single',
       label: 'Snack',
       hint: 'Quick log a single food',

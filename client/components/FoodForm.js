@@ -257,11 +257,10 @@ export default function FoodForm({
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bg },
+  scroll: { flex: 1 },
   container: {
     padding: spacing.xl,
     gap: spacing.lg,
-    backgroundColor: colors.bg,
   },
   field: { gap: spacing.sm },
   label: {

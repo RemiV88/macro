@@ -9,8 +9,8 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { X, Plus, Save } from 'lucide-react-native';
-import FoodPickerModal from './FoodPickerModal';
+import { X, Save, ChefHat } from 'lucide-react-native';
+import RecipePickerModal from './RecipePickerModal';
 import ChipRow from './ChipRow';
 import { createLoggedMeal, localDateString } from '../api/loggedMeals';
 import { MEAL_SLOTS, slotLabel, itemKcal } from '../utils/macros';
@@ -18,12 +18,12 @@ import { colors, spacing, radius, typography } from '../theme';
 
 const SLOT_OPTIONS = MEAL_SLOTS.map((s) => ({ value: s, label: slotLabel(s) }));
 
-export default function LogSingleFoodModal({ visible, onClose, onLogged, date }) {
-  // The "Snack" entry on the action sheet routes here, so default the slot to
-  // snack. The user can still change it via the chip row.
+export default function LogRecipeModal({ visible, onClose, onLogged, date }) {
+  // No good way to map Spoonacular's recipe `type` (e.g. "main course") to our
+  // slot vocab without guessing — default to snack and let the user override.
   const [slot, setSlot] = useState('snack');
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [picked, setPicked] = useState(null); // full inline item or null
+  const [pickerOpen, setPickerOpen] = useState(true);
+  const [picked, setPicked] = useState(null); // inline meal item
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -33,17 +33,22 @@ export default function LogSingleFoodModal({ visible, onClose, onLogged, date })
       setError(null);
       setSubmitting(false);
       setSlot('snack');
+      setPickerOpen(false);
+      return;
     }
+    // Open picker on first show.
+    if (!picked) setPickerOpen(true);
   }, [visible]);
 
   function handlePick(item) {
     setPicked(item);
+    setPickerOpen(false);
   }
 
   async function handleSave() {
     setError(null);
     if (!picked) {
-      setError('Pick a food first');
+      setError('Pick a recipe first');
       return;
     }
     setSubmitting(true);
@@ -70,10 +75,6 @@ export default function LogSingleFoodModal({ visible, onClose, onLogged, date })
     }
   }
 
-  // The preview item used the old { food, portionGrams } shape with
-  // food.caloriesPer100g and food.name. The picker now hands us a flat object
-  // with caloriesPer100g + foodName already at the top level — adapt for the
-  // existing JSX (which reads previewItem.name + caloriesPer100g).
   const previewItem = picked
     ? {
         name: picked.foodName,
@@ -87,89 +88,89 @@ export default function LogSingleFoodModal({ visible, onClose, onLogged, date })
 
   return (
     <>
-    <Modal visible={!!visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={() => {}}>
-          <View style={styles.header}>
-            <View style={styles.iconBtnSpacer} />
-            <Text style={styles.title}>Quick log a food</Text>
-            <Pressable style={styles.iconBtn} onPress={onClose}>
-              <X size={20} color={colors.text} />
-            </Pressable>
-          </View>
-
-          <ScrollView style={styles.body} contentContainerStyle={styles.content}>
-            <View style={styles.field}>
-              <Text style={styles.label}>Meal slot</Text>
-              <ChipRow options={SLOT_OPTIONS} value={slot} onChange={setSlot} disabled={submitting} />
+      <Modal visible={!!visible} transparent animationType="slide" onRequestClose={onClose}>
+        <Pressable style={styles.backdrop} onPress={onClose}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            <View style={styles.header}>
+              <View style={styles.iconBtnSpacer} />
+              <Text style={styles.title}>Log a recipe</Text>
+              <Pressable style={styles.iconBtn} onPress={onClose}>
+                <X size={20} color={colors.text} />
+              </Pressable>
             </View>
 
-            <View style={styles.field}>
-              <Text style={styles.label}>Food</Text>
-              {previewItem ? (
-                <View style={styles.itemRow}>
-                  <View style={styles.itemText}>
-                    <Text style={styles.itemName} numberOfLines={1}>{previewItem.name}</Text>
-                    <Text style={styles.itemMeta}>
-                      {Math.round(previewItem.portionGrams)}g · {Math.round(itemKcal(previewItem))} kcal
-                    </Text>
+            <ScrollView style={styles.body} contentContainerStyle={styles.content}>
+              <View style={styles.field}>
+                <Text style={styles.label}>Meal slot</Text>
+                <ChipRow options={SLOT_OPTIONS} value={slot} onChange={setSlot} disabled={submitting} />
+              </View>
+
+              <View style={styles.field}>
+                <Text style={styles.label}>Recipe</Text>
+                {previewItem ? (
+                  <View style={styles.itemRow}>
+                    <View style={styles.itemText}>
+                      <Text style={styles.itemName} numberOfLines={2}>{previewItem.name}</Text>
+                      <Text style={styles.itemMeta}>
+                        {Math.round(itemKcal(previewItem))} kcal total
+                      </Text>
+                    </View>
+                    <Pressable
+                      style={({ pressed }) => [styles.changeBtn, pressed && styles.btnPressed]}
+                      onPress={() => setPickerOpen(true)}
+                    >
+                      <Text style={styles.changeText}>Change</Text>
+                    </Pressable>
                   </View>
+                ) : (
                   <Pressable
-                    style={({ pressed }) => [styles.changeBtn, pressed && styles.btnPressed]}
                     onPress={() => setPickerOpen(true)}
+                    disabled={submitting}
+                    style={({ pressed }) => [
+                      styles.glassBtn,
+                      styles.pickBtn,
+                      pressed && styles.btnPressed,
+                      submitting && styles.btnDisabled,
+                    ]}
                   >
-                    <Text style={styles.changeText}>Change</Text>
+                    <ChefHat size={18} color={colors.accent} />
+                    <Text style={styles.pickText}>Find a recipe</Text>
                   </Pressable>
-                </View>
-              ) : (
-                <Pressable
-                  onPress={() => setPickerOpen(true)}
-                  disabled={submitting}
-                  style={({ pressed }) => [
-                    styles.glassBtn,
-                    styles.pickBtn,
-                    pressed && styles.btnPressed,
-                    submitting && styles.btnDisabled,
-                  ]}
-                >
-                  <Plus size={18} color={colors.accent} />
-                  <Text style={styles.pickText}>Pick a food</Text>
-                </Pressable>
-              )}
-            </View>
+                )}
+              </View>
 
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+              {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <Pressable
-              onPress={handleSave}
-              disabled={submitting || !picked}
-              style={({ pressed }) => [
-                styles.glassBtn,
-                styles.saveBtn,
-                pressed && styles.btnPressed,
-                (submitting || !picked) && styles.btnDisabled,
-              ]}
-            >
-              {submitting ? (
-                <ActivityIndicator color={colors.accent} />
-              ) : (
-                <>
-                  <Save size={18} color={colors.accent} />
-                  <Text style={styles.saveText}>Log it</Text>
-                </>
-              )}
-            </Pressable>
-          </ScrollView>
+              <Pressable
+                onPress={handleSave}
+                disabled={submitting || !picked}
+                style={({ pressed }) => [
+                  styles.glassBtn,
+                  styles.saveBtn,
+                  pressed && styles.btnPressed,
+                  (submitting || !picked) && styles.btnDisabled,
+                ]}
+              >
+                {submitting ? (
+                  <ActivityIndicator color={colors.accent} />
+                ) : (
+                  <>
+                    <Save size={18} color={colors.accent} />
+                    <Text style={styles.saveText}>Log it</Text>
+                  </>
+                )}
+              </Pressable>
+            </ScrollView>
+          </Pressable>
         </Pressable>
-      </Pressable>
-    </Modal>
+      </Modal>
 
-    <FoodPickerModal
-      visible={pickerOpen}
-      onClose={() => setPickerOpen(false)}
-      onPick={handlePick}
-      title="Pick a food"
-    />
+      <RecipePickerModal
+        visible={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onPick={handlePick}
+        title="Find a recipe"
+      />
     </>
   );
 }

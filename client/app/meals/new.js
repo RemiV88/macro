@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import MealTemplateForm from '../../components/MealTemplateForm';
+import ScreenBackground from '../../components/ScreenBackground';
 import { createMealTemplate } from '../../api/mealTemplates';
+import { colors } from '../../theme';
 
 export default function NewMealTemplate() {
   const router = useRouter();
@@ -24,11 +27,18 @@ export default function NewMealTemplate() {
   }
 
   return (
-    <MealTemplateForm
-      submitLabel="Save meal"
-      onSubmit={handleSubmit}
-      onCancel={handleCancel}
-      submitting={submitting}
-    />
+    <View style={styles.outer}>
+      <ScreenBackground />
+      <MealTemplateForm
+        submitLabel="Save meal"
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+        submitting={submitting}
+      />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  outer: { flex: 1, backgroundColor: colors.bg },
+});

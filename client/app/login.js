@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Link } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
+import ScreenBackground from '../components/ScreenBackground';
 import { colors, spacing, radius, typography } from '../theme';
 
 export default function Login() {
@@ -42,6 +43,7 @@ export default function Login() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      <ScreenBackground />
       <View style={styles.form}>
         <Text style={styles.title}>Welcome back</Text>
 

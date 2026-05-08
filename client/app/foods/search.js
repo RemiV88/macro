@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { searchUsda } from '../../api/usda';
 import { setPendingPick } from './_pendingPick';
+import ScreenBackground from '../../components/ScreenBackground';
 import { colors, spacing, radius, typography } from '../../theme';
 
 const DEBOUNCE_MS = 400;
@@ -71,6 +72,7 @@ export default function SearchFood() {
 
   return (
     <View style={styles.container}>
+      <ScreenBackground />
       <View style={styles.searchWrap}>
         <TextInput
           style={styles.input}

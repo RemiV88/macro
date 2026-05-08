@@ -60,6 +60,7 @@ export default function TabsLayout() {
           fontFamily: typography.fontFamily.medium,
           fontSize: typography.sizes.caption,
         },
+        // Solid base — each tab screen mounts its own ScreenBackground.
         sceneStyle: { backgroundColor: colors.bg },
       }}
     >

@@ -8,11 +8,12 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { Trash2, Plus, Save, X } from 'lucide-react-native';
+import { Trash2, Plus, Save, X, ChefHat } from 'lucide-react-native';
 import Input from './Input';
 import Button from './Button';
 import ChipRow from './ChipRow';
 import FoodPickerModal from './FoodPickerModal';
+import RecipePickerModal from './RecipePickerModal';
 import { itemKcal, MEAL_SLOTS, slotLabel, normalizeTemplateItem } from '../utils/macros';
 import { colors, spacing, radius, typography } from '../theme';
 
@@ -33,6 +34,7 @@ export default function MealTemplateForm({
     (initialTemplate?.items || []).map(normalizeTemplateItem)
   );
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [recipePickerOpen, setRecipePickerOpen] = useState(false);
   const [error, setError] = useState(null);
 
   // Picker now delivers a full inline item; we just need to map foodName→name
@@ -137,20 +139,36 @@ export default function MealTemplateForm({
           </View>
         )}
 
-        <Pressable
-          onPress={() => setPickerOpen(true)}
-          disabled={submitting || deleting}
-          style={({ pressed }) => [
-            styles.glassBtn,
-            styles.addFoodBtn,
-            pressed && styles.btnPressed,
-            (submitting || deleting) && styles.btnDisabled,
-          ]}
-          accessibilityRole="button"
-        >
-          <Plus size={18} color={colors.accent} />
-          <Text style={styles.addFoodBtnText}>Add food</Text>
-        </Pressable>
+        <View style={styles.addRow}>
+          <Pressable
+            onPress={() => setPickerOpen(true)}
+            disabled={submitting || deleting}
+            style={({ pressed }) => [
+              styles.glassBtn,
+              styles.addFoodBtn,
+              pressed && styles.btnPressed,
+              (submitting || deleting) && styles.btnDisabled,
+            ]}
+            accessibilityRole="button"
+          >
+            <Plus size={18} color={colors.accent} />
+            <Text style={styles.addFoodBtnText}>Add food</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setRecipePickerOpen(true)}
+            disabled={submitting || deleting}
+            style={({ pressed }) => [
+              styles.glassBtn,
+              styles.addFoodBtn,
+              pressed && styles.btnPressed,
+              (submitting || deleting) && styles.btnDisabled,
+            ]}
+            accessibilityRole="button"
+          >
+            <ChefHat size={18} color={colors.accent} />
+            <Text style={styles.addFoodBtnText}>Add recipe</Text>
+          </Pressable>
+        </View>
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -210,12 +228,19 @@ export default function MealTemplateForm({
         title="Add food to meal"
         allowQuickAdd
       />
+
+      <RecipePickerModal
+        visible={recipePickerOpen}
+        onClose={() => setRecipePickerOpen(false)}
+        onPick={handlePick}
+        title="Add recipe to meal"
+      />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: colors.bg },
+  scroll: { flex: 1 },
   container: {
     padding: spacing.xl,
     gap: spacing.lg,
@@ -233,6 +258,11 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   itemList: {
+    gap: spacing.sm,
+  },
+  addRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   itemRow: {

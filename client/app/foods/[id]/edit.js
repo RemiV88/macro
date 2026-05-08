@@ -3,6 +3,7 @@ import { View, Text, ActivityIndicator, StyleSheet, Platform, Alert } from 'reac
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import FoodForm from '../../../components/FoodForm';
 import { useConfirm } from '../../../components/ConfirmModal';
+import ScreenBackground from '../../../components/ScreenBackground';
 import { getFood, updateFood, deleteFood } from '../../../api/foods';
 import { consumePendingPick } from '../_pendingPick';
 import { colors, spacing, typography } from '../../../theme';
@@ -82,6 +83,7 @@ export default function EditFood() {
   if (loadError) {
     return (
       <View style={styles.center}>
+        <ScreenBackground />
         <Text style={styles.errorText}>{loadError}</Text>
       </View>
     );
@@ -90,13 +92,15 @@ export default function EditFood() {
   if (!food) {
     return (
       <View style={styles.center}>
+        <ScreenBackground />
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
 
   return (
-    <>
+    <View style={styles.outer}>
+      <ScreenBackground />
       <FoodForm
         initialFood={food}
         hydrate={hydrate}
@@ -109,11 +113,12 @@ export default function EditFood() {
         deleting={deleting}
       />
       {confirmModal}
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outer: { flex: 1, backgroundColor: colors.bg },
   center: {
     flex: 1,
     alignItems: 'center',
