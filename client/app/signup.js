@@ -14,6 +14,7 @@ import { Link } from 'expo-router';
 import { useAuth } from '../context/AuthContext';
 import { AvatarPickerWithCaption } from '../components/AvatarPicker';
 import ScreenBackground from '../components/ScreenBackground';
+import { uploadImage } from '../utils/cloudinary';
 import { colors, spacing, radius, typography } from '../theme';
 
 export default function Signup() {
@@ -24,6 +25,7 @@ export default function Signup() {
   const [profileImageUrl, setProfileImageUrl] = useState(null);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   async function onSubmit() {
     const trimmedName = name.trim();
@@ -42,7 +44,20 @@ export default function Signup() {
     setError(null);
     setSubmitting(true);
     try {
-      await signup(trimmedName, email.trim(), password, profileImageUrl);
+      let finalImageUrl = profileImageUrl || null;
+      if (finalImageUrl && !/^https?:\/\//.test(finalImageUrl)) {
+        setUploading(true);
+        try {
+          finalImageUrl = await uploadImage(finalImageUrl);
+        } catch (err) {
+          setError(err.message || 'Image upload failed');
+          setUploading(false);
+          setSubmitting(false);
+          return;
+        }
+        setUploading(false);
+      }
+      await signup(trimmedName, email.trim(), password, finalImageUrl);
       // _layout will route to onboarding
     } catch (err) {
       setError(err?.response?.data?.error || err.message || 'Sign up failed');
@@ -111,7 +126,11 @@ export default function Signup() {
             disabled={submitting}
           >
             {submitting ? (
-              <ActivityIndicator color={colors.bg} />
+              uploading ? (
+                <Text style={styles.buttonText}>Uploading…</Text>
+              ) : (
+                <ActivityIndicator color={colors.bg} />
+              )
             ) : (
               <Text style={styles.buttonText}>Sign up</Text>
             )}
@@ -136,7 +155,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing.xl,
   },
-  form: { gap: spacing.md },
+  form: {
+    gap: spacing.md,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+  },
   title: {
     fontSize: typography.sizes.h1,
     fontFamily: typography.fontFamily.bold,

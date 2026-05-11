@@ -25,9 +25,15 @@ import LogBuildModal from '../../components/LogBuildModal';
 import LogSingleFoodModal from '../../components/LogSingleFoodModal';
 import LogRecipeModal from '../../components/LogRecipeModal';
 import StreakFlame from '../../components/StreakFlame';
+import MacroDonut from '../../components/MacroDonut';
 import ScreenBackground from '../../components/ScreenBackground';
 import { useConfirm } from '../../components/ConfirmModal';
 import { useAuth } from '../../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  scheduleMealReminders,
+  isSupported as notificationsSupported,
+} from '../../utils/notifications';
 import {
   MEAL_SLOTS,
   slotLabel,
@@ -86,6 +92,10 @@ export default function Today() {
       setLoggedMeals(data);
       if (typeof s === 'number') setStreak(s);
       hasLoadedRef.current = true;
+      if (notificationsSupported()) {
+        const enabled = (await AsyncStorage.getItem('remindersEnabled')) !== 'false';
+        if (enabled) scheduleMealReminders(data);
+      }
     } catch (err) {
       setError(err?.response?.data?.error || err.message || 'Could not load');
     } finally {
@@ -218,17 +228,20 @@ export default function Today() {
             </Pressable>
           </View>
         ) : (
-          MEAL_SLOTS.map((slot) => (
-            <SlotSection
-              key={slot}
-              slot={slot}
-              meals={grouped[slot]}
-              onAdd={() => openActionSheet(slot)}
-              onMealPress={(m) => router.push(`/logged-meals/${m._id}/edit`)}
-              onMealEdit={(m) => router.push(`/logged-meals/${m._id}/edit`)}
-              onMealDelete={handleDelete}
-            />
-          ))
+          <>
+            {MEAL_SLOTS.map((slot) => (
+              <SlotSection
+                key={slot}
+                slot={slot}
+                meals={grouped[slot]}
+                onAdd={() => openActionSheet(slot)}
+                onMealPress={(m) => router.push(`/logged-meals/${m._id}/edit`)}
+                onMealEdit={(m) => router.push(`/logged-meals/${m._id}/edit`)}
+                onMealDelete={handleDelete}
+              />
+            ))}
+            <MacroDonut totals={totals} />
+          </>
         )}
       </ScrollView>
 

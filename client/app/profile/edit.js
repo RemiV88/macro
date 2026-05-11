@@ -15,6 +15,7 @@ import Input from '../../components/Input';
 import ScreenBackground from '../../components/ScreenBackground';
 import { useAuth } from '../../context/AuthContext';
 import { updateMe } from '../../api/users';
+import { uploadImage } from '../../utils/cloudinary';
 import { colors, spacing, radius, typography } from '../../theme';
 
 export default function EditProfile() {
@@ -24,6 +25,7 @@ export default function EditProfile() {
   const [name, setName] = useState(user?.name || '');
   const [profileImageUrl, setProfileImageUrl] = useState(user?.profileImageUrl || null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
 
   async function handleSave() {
@@ -34,9 +36,22 @@ export default function EditProfile() {
     }
     setSubmitting(true);
     try {
+      let finalImageUrl = profileImageUrl || null;
+      if (finalImageUrl && !/^https?:\/\//.test(finalImageUrl)) {
+        setUploading(true);
+        try {
+          finalImageUrl = await uploadImage(finalImageUrl);
+        } catch (err) {
+          setError(err.message || 'Image upload failed');
+          setUploading(false);
+          setSubmitting(false);
+          return;
+        }
+        setUploading(false);
+      }
       await updateMe({
         name: name.trim(),
-        profileImageUrl: profileImageUrl || null,
+        profileImageUrl: finalImageUrl,
       });
       await refreshUser();
       if (router.canGoBack()) router.back();
@@ -94,7 +109,10 @@ export default function EditProfile() {
           accessibilityRole="button"
         >
           {submitting ? (
-            <ActivityIndicator color={colors.accent} />
+            <>
+              <ActivityIndicator color={colors.accent} />
+              {uploading ? <Text style={styles.submitText}>Uploading…</Text> : null}
+            </>
           ) : (
             <>
               <Save size={18} color={colors.accent} />

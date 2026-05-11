@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, AppState, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'expo-status-bar';
 import {
   useFonts,
@@ -10,7 +11,29 @@ import {
   SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
 import { AuthProvider, useAuth } from '../context/AuthContext';
+import {
+  configureNotificationHandler,
+  scheduleMealReminders,
+  isSupported as notificationsSupported,
+} from '../utils/notifications';
+import { listLoggedMeals, localDateString } from '../api/loggedMeals';
 import { colors, typography } from '../theme';
+
+configureNotificationHandler();
+
+async function refreshRemindersFromServer() {
+  if (!notificationsSupported()) return;
+  const enabled = (await AsyncStorage.getItem('remindersEnabled')) !== 'false';
+  if (!enabled) return;
+  try {
+    const meals = await listLoggedMeals(localDateString());
+    await scheduleMealReminders(meals);
+  } catch {
+    // Network failures shouldn't break boot — schedule with empty list so
+    // tomorrow's reminders still fire.
+    await scheduleMealReminders([]);
+  }
+}
 
 const PUBLIC_ROUTES = new Set(['login', 'signup']);
 const AUTHED_STACKS = new Set(['foods', 'meals', 'logged-meals', 'profile', 'weight', 'history']);
@@ -19,6 +42,18 @@ function AuthGate() {
   const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const appState = useRef(AppState.currentState);
+
+  useEffect(() => {
+    if (!user || Platform.OS === 'web') return;
+    refreshRemindersFromServer();
+    const sub = AppState.addEventListener('change', (next) => {
+      const wasBackground = appState.current.match(/inactive|background/);
+      appState.current = next;
+      if (wasBackground && next === 'active') refreshRemindersFromServer();
+    });
+    return () => sub.remove();
+  }, [user]);
 
   useEffect(() => {
     if (loading) return;
@@ -59,6 +94,7 @@ function AuthGate() {
     <Stack
       screenOptions={{
         headerShown: false,
+        animation: 'slide_from_right',
         // Solid base — each screen mounts its own ScreenBackground inside its
         // own root View, so screens fully cover each other on navigation while
         // the pattern shows beneath each screen's content.

@@ -35,6 +35,11 @@ export async function getDailySummary(from, to) {
   return res.data.days;
 }
 
+export async function getWeeklyStats() {
+  const res = await api.get('/logged-meals/weekly-stats');
+  return res.data;
+}
+
 export function localDateString(d = new Date()) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');

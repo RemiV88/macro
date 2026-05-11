@@ -97,7 +97,12 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     backgroundColor: colors.bg,
   },
-  form: { gap: spacing.md },
+  form: {
+    gap: spacing.md,
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+  },
   title: {
     fontSize: typography.sizes.h1,
     fontFamily: typography.fontFamily.bold,

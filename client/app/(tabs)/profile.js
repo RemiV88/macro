@@ -1,8 +1,28 @@
-import { View, Text, Image, Pressable, ScrollView, StyleSheet, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Platform,
+  Switch,
+  Linking,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { CircleUser, Pencil, Scale } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
 import ScreenBackground from '../../components/ScreenBackground';
+import WeeklyStatsCard from '../../components/WeeklyStatsCard';
+import {
+  requestNotificationPermissions,
+  scheduleMealReminders,
+  cancelAllMealReminders,
+  isSupported as notificationsSupported,
+} from '../../utils/notifications';
+import { listLoggedMeals, localDateString, getWeeklyStats } from '../../api/loggedMeals';
 import { colors, spacing, radius, typography } from '../../theme';
 
 const AVATAR_SIZE = 88;
@@ -44,6 +64,72 @@ export default function Profile() {
   const router = useRouter();
   const { user } = useAuth();
   const stats = buildStats(user);
+  const supportsNotifications = notificationsSupported();
+
+  const [remindersEnabled, setRemindersEnabled] = useState(true);
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const [savingToggle, setSavingToggle] = useState(false);
+
+  const [weeklyStats, setWeeklyStats] = useState(null);
+  const [weeklyLoading, setWeeklyLoading] = useState(true);
+  const [weeklyError, setWeeklyError] = useState(null);
+
+  useEffect(() => {
+    (async () => {
+      const stored = await AsyncStorage.getItem('remindersEnabled');
+      setRemindersEnabled(stored !== 'false');
+    })();
+  }, []);
+
+  const loadWeekly = useCallback(async () => {
+    setWeeklyError(null);
+    try {
+      const data = await getWeeklyStats();
+      setWeeklyStats(data);
+    } catch (err) {
+      setWeeklyError(err?.response?.data?.error || err.message || 'Could not load');
+    } finally {
+      setWeeklyLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadWeekly();
+    }, [loadWeekly])
+  );
+
+  async function handleToggle(next) {
+    if (!supportsNotifications || savingToggle) return;
+    setSavingToggle(true);
+    try {
+      if (!next) {
+        await cancelAllMealReminders();
+        await AsyncStorage.setItem('remindersEnabled', 'false');
+        setRemindersEnabled(false);
+        setPermissionDenied(false);
+        return;
+      }
+      const granted = await requestNotificationPermissions();
+      if (!granted) {
+        setPermissionDenied(true);
+        setRemindersEnabled(false);
+        await AsyncStorage.setItem('remindersEnabled', 'false');
+        return;
+      }
+      setPermissionDenied(false);
+      await AsyncStorage.setItem('remindersEnabled', 'true');
+      setRemindersEnabled(true);
+      try {
+        const meals = await listLoggedMeals(localDateString());
+        await scheduleMealReminders(meals);
+      } catch {
+        await scheduleMealReminders([]);
+      }
+    } finally {
+      setSavingToggle(false);
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -90,6 +176,43 @@ export default function Profile() {
           <Text style={styles.editBtnText}>Weight</Text>
         </Pressable>
 
+        <View style={styles.innerCard}>
+          <View style={styles.reminderRow}>
+            <View style={styles.reminderText}>
+              <Text style={styles.reminderLabel}>Daily meal reminders</Text>
+              <Text style={styles.reminderSubtitle}>
+                {supportsNotifications
+                  ? '10 AM, 2 PM, 9 PM — only if you haven’t logged'
+                  : 'Reminders are only available in the mobile app.'}
+              </Text>
+            </View>
+            <Switch
+              value={supportsNotifications && remindersEnabled}
+              onValueChange={handleToggle}
+              disabled={!supportsNotifications || savingToggle}
+              trackColor={{ false: colors.border, true: colors.accent }}
+              thumbColor={Platform.OS === 'android' ? colors.text : undefined}
+              ios_backgroundColor={colors.border}
+            />
+          </View>
+          {permissionDenied ? (
+            <View style={styles.permissionRow}>
+              <Text style={styles.permissionText}>
+                Enable notifications in Settings to receive reminders.
+              </Text>
+              <Pressable
+                onPress={() => Linking.openSettings()}
+                style={({ pressed }) => [
+                  styles.permissionBtn,
+                  pressed && styles.btnPressed,
+                ]}
+              >
+                <Text style={styles.permissionBtnText}>Open Settings</Text>
+              </Pressable>
+            </View>
+          ) : null}
+        </View>
+
         {user?.dailyCalorieTarget ? (
           <View style={styles.innerCard}>
             <Text style={styles.cardLabel}>Daily target</Text>
@@ -99,6 +222,13 @@ export default function Profile() {
             </Text>
           </View>
         ) : null}
+
+        <WeeklyStatsCard
+          stats={weeklyStats}
+          loading={weeklyLoading}
+          error={weeklyError}
+          onRetry={loadWeekly}
+        />
 
         {stats.length > 0 ? (
           <View style={styles.innerCard}>
@@ -266,6 +396,49 @@ const styles = StyleSheet.create({
   statValue: {
     color: colors.text,
     fontSize: typography.sizes.body,
+    fontFamily: typography.fontFamily.semibold,
+  },
+  reminderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  reminderText: {
+    flex: 1,
+    gap: 2,
+  },
+  reminderLabel: {
+    color: colors.text,
+    fontSize: typography.sizes.body,
+    fontFamily: typography.fontFamily.semibold,
+  },
+  reminderSubtitle: {
+    color: colors.textMuted,
+    fontSize: typography.sizes.caption,
+    fontFamily: typography.fontFamily.regular,
+  },
+  permissionRow: {
+    marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  permissionText: {
+    color: colors.textMuted,
+    fontSize: typography.sizes.caption,
+    fontFamily: typography.fontFamily.medium,
+  },
+  permissionBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.accentMuted,
+    borderWidth: 1,
+    borderColor: colors.accent + '33',
+  },
+  permissionBtnText: {
+    color: colors.accent,
+    fontSize: typography.sizes.caption,
     fontFamily: typography.fontFamily.semibold,
   },
 });

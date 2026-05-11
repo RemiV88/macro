@@ -6,6 +6,7 @@ export default function WeightLayout() {
     <Stack
       screenOptions={{
         headerShown: true,
+        animation: 'slide_from_right',
         headerStyle: { backgroundColor: colors.bg },
         headerTintColor: colors.text,
         headerTitleStyle: { fontFamily: typography.fontFamily.semibold },

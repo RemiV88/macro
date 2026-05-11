@@ -46,6 +46,9 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: true,
+        // Bottom-tabs in React Navigation 7 supports 'fade' | 'shift' | 'none'.
+        // Sliding tabs feels wrong for a tab bar; fade keeps things calm.
+        animation: 'fade',
         headerStyle: { backgroundColor: colors.bg },
         headerTintColor: colors.text,
         headerTitleStyle: { fontFamily: typography.fontFamily.semibold },

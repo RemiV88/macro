@@ -316,6 +316,98 @@ async function getDailySummary(req, res) {
   res.json({ days });
 }
 
+// Last-7-days roll-up used by the Profile screen. We aggregate macro totals
+// per day in JS rather than via a Mongo $group pipeline because the kcal
+// derivation (per-100g × portion) lives on each item, not on a precomputed
+// total. Loading 7 days of meals for one user is bounded by user behavior
+// and stays small.
+async function getWeeklyStats(req, res) {
+  const dayMs = 24 * 60 * 60 * 1000;
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const start = new Date(today.getTime() - 6 * dayMs); // 7-day window inclusive
+  const next = new Date(today.getTime() + dayMs);
+
+  const meals = await LoggedMeal.find({
+    userId: req.user._id,
+    date: { $gte: start, $lt: next },
+  }).lean();
+
+  // Per-day totals — keyed by YYYY-MM-DD so we can reason about empty days.
+  const byDate = new Map();
+  for (const m of meals) {
+    const d = new Date(m.date);
+    d.setUTCHours(0, 0, 0, 0);
+    const key = d.toISOString().slice(0, 10);
+    let agg = byDate.get(key);
+    if (!agg) {
+      agg = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+      byDate.set(key, agg);
+    }
+    for (const it of m.items || []) {
+      const factor = (it.portionGrams || 0) / 100;
+      agg.kcal += (it.caloriesPer100g || 0) * factor;
+      agg.protein += (it.proteinPer100g || 0) * factor;
+      agg.carbs += (it.carbsPer100g || 0) * factor;
+      agg.fat += (it.fatPer100g || 0) * factor;
+    }
+  }
+
+  const target = Number(req.user.dailyCalorieTarget) || 0;
+  let kcalSum = 0;
+  let daysWithData = 0;
+  let daysOnTarget = 0;
+  // Macro %s averaged across days that have any food logged — averaging
+  // across empty days would bias toward zero and misrepresent intent.
+  const macroPctSum = { protein: 0, carbs: 0, fat: 0 };
+
+  for (let t = start.getTime(); t <= today.getTime(); t += dayMs) {
+    const key = new Date(t).toISOString().slice(0, 10);
+    const agg = byDate.get(key);
+    if (!agg) continue;
+    if (agg.kcal <= 0) continue;
+    daysWithData++;
+    kcalSum += agg.kcal;
+    if (target > 0 && agg.kcal >= target * 0.9 && agg.kcal <= target * 1.1) {
+      daysOnTarget++;
+    }
+    const proteinKcal = agg.protein * 4;
+    const carbsKcal = agg.carbs * 4;
+    const fatKcal = agg.fat * 9;
+    const denom = proteinKcal + carbsKcal + fatKcal;
+    if (denom > 0) {
+      macroPctSum.protein += (proteinKcal / denom) * 100;
+      macroPctSum.carbs += (carbsKcal / denom) * 100;
+      macroPctSum.fat += (fatKcal / denom) * 100;
+    }
+  }
+
+  const totalDays = 7;
+  // Average over days the user actually logged something — empty days would
+  // distort the picture toward zero and misrepresent typical daily intake.
+  const avgCalories = daysWithData > 0 ? Math.round(kcalSum / daysWithData) : null;
+  const macroAvg =
+    daysWithData > 0
+      ? {
+          protein: Math.round(macroPctSum.protein / daysWithData),
+          carbs: Math.round(macroPctSum.carbs / daysWithData),
+          fat: Math.round(macroPctSum.fat / daysWithData),
+        }
+      : { protein: 0, carbs: 0, fat: 0 };
+
+  res.json({
+    avgCalories,
+    dailyCalorieTarget: target,
+    // daysOnTarget / daysWithData is the meaningful ratio — counting empty
+    // days against the user punishes them for not logging rather than for
+    // missing the target on days they did log.
+    daysOnTarget: daysWithData > 0 ? daysOnTarget : null,
+    daysWithData,
+    totalDays,
+    macroAvg,
+  });
+}
+
 async function deleteLoggedMeal(req, res) {
   if (!mongoose.isValidObjectId(req.params.id)) {
     return res.status(404).json({ error: 'Logged meal not found' });
@@ -336,4 +428,5 @@ module.exports = {
   deleteLoggedMeal,
   getStreak,
   getDailySummary,
+  getWeeklyStats,
 };

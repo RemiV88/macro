@@ -63,6 +63,37 @@ function computeRollingAverage(entries) {
   return out;
 }
 
+// Earliest vs latest weigh-in within the trailing 7-day window (today
+// inclusive). Returns null when fewer than 2 entries fall in range — a single
+// data point can't define a change.
+function weeklyChange(entries) {
+  const dayMs = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const cutoff = now - 7 * dayMs;
+  const recent = entries
+    .filter((e) => new Date(e.date).getTime() >= cutoff)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  if (recent.length < 2) return null;
+  const delta = recent[recent.length - 1].weightKg - recent[0].weightKg;
+  return Math.round(delta * 10) / 10;
+}
+
+// Color the weekly delta based on whether it moves the user toward their goal.
+// Maintain + zero change stay neutral so we don't paint normal fluctuations
+// red or green.
+function deltaColor(delta, goal) {
+  if (delta == null || delta === 0) return colors.textMuted;
+  if (goal === 'lose') return delta < 0 ? colors.success : colors.danger;
+  if (goal === 'gain') return delta > 0 ? colors.success : colors.danger;
+  return colors.textMuted;
+}
+
+function formatDelta(delta) {
+  if (delta === 0) return '— this week';
+  const sign = delta > 0 ? '+' : '−';
+  return `${sign}${Math.abs(delta).toFixed(1)} kg this week`;
+}
+
 function progressInfo({ goal, startingWeightKg, targetWeightKg, currentWeightKg }) {
   if (goal !== 'lose' && goal !== 'gain') return null;
   if (
@@ -412,6 +443,7 @@ export default function WeightScreen() {
     targetWeightKg: user?.targetWeightKg,
     currentWeightKg: currentWeight,
   });
+  const weeklyDelta = useMemo(() => weeklyChange(entries), [entries]);
 
   // Sort by date ascending for graph; reverse for the list (most recent first).
   const sortedAsc = useMemo(
@@ -441,6 +473,20 @@ export default function WeightScreen() {
           <Text style={styles.heroNumber}>
             {currentWeight != null ? `${currentWeight} kg` : '—'}
           </Text>
+
+          {weeklyDelta != null ? (
+            <View style={styles.weeklyChangeRow}>
+              <Text style={styles.weeklyChangeLabel}>7-day change</Text>
+              <Text
+                style={[
+                  styles.weeklyChangeValue,
+                  { color: deltaColor(weeklyDelta, user?.goal) },
+                ]}
+              >
+                {formatDelta(weeklyDelta)}
+              </Text>
+            </View>
+          ) : null}
 
           {user?.goal === 'maintain' ? (
             <Text style={styles.maintainText}>Maintaining</Text>
@@ -581,6 +627,24 @@ const styles = StyleSheet.create({
     fontFamily: typography.fontFamily.medium,
     color: colors.textMuted,
     marginTop: spacing.sm,
+  },
+  weeklyChangeRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: spacing.sm,
+    gap: spacing.md,
+  },
+  weeklyChangeLabel: {
+    color: colors.textMuted,
+    fontSize: typography.sizes.caption,
+    fontFamily: typography.fontFamily.medium,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  weeklyChangeValue: {
+    fontSize: typography.sizes.bodyLg,
+    fontFamily: typography.fontFamily.semibold,
   },
   progressBlock: {
     gap: spacing.sm,
