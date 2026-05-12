@@ -37,7 +37,12 @@ app.use((err, req, res, _next) => {
 const PORT = process.env.PORT || 5001;
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+module.exports = app;
+// And for development only start the server if we're not in a serverless environment
+// This will only happen locally in development mode
+if (process.env.NODE_ENV !== 'production') {
+  // Start the server
+  const port = process.env.PORT || 4444;
+  app.listen(port, () => console.log("🚀 Listening on port: " + port + " 🚀"));
+}
 });

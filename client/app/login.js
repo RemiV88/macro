@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Image,
   Platform,
 } from 'react-native';
 import { Link } from 'expo-router';
@@ -45,6 +46,11 @@ export default function Login() {
     >
       <ScreenBackground />
       <View style={styles.form}>
+        <Image
+          source={require('../assets/logo.png')}
+          style={styles.logo}
+          accessibilityIgnoresInvertColors
+        />
         <Text style={styles.title}>Welcome back</Text>
 
         <TextInput
@@ -102,6 +108,12 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 480,
     alignSelf: 'center',
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    alignSelf: 'center',
+    marginBottom: spacing.lg,
   },
   title: {
     fontSize: typography.sizes.h1,
