@@ -35,9 +35,8 @@ app.use((err, req, res, _next) => {
 });
 
 const PORT = process.env.PORT || 5001;
-
-connectDB().then(() => {
 module.exports = app;
+connectDB().then(() => {
 // And for development only start the server if we're not in a serverless environment
 // This will only happen locally in development mode
 if (process.env.NODE_ENV !== 'production') {
